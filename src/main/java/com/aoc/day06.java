@@ -15,6 +15,7 @@ public class day06 {
         File input = new File("src/main/resources/day06.in");
         readFile(input);
         part1();
+        part2();
     }
 
     public enum Direction {
@@ -48,12 +49,37 @@ public class day06 {
     }
 
     private static void part1() {
-        Guard guard = new Guard(start, Direction.N);
-        while (!guard.out(InGrid)){
+        Guard guard = new Guard(new Position(start), Direction.N);
+        while (guard.inGrid(InGrid)){
             path.add(new Position(guard.pos));
             guard.move(InGrid);
         }
-        System.out.println(path.size());
+        System.out.println("Part 1 : " + path.size());
+    }
+
+    private static void part2(){
+        int looped = 0;
+        Grid blockedGrid = new Grid(InGrid);
+        HashSet<Position> loopedPath = new HashSet<>();
+        Guard guard = new Guard(new Position(start), Direction.N);
+        for(Position p : path) {
+            if (p == start) continue;
+            loopedPath.clear();
+            blockedGrid.obstructions.add(p);
+            while(guard.inGrid(blockedGrid)){
+                Position curPos = new Position(guard.getPos(), guard.getDir());
+                if (loopedPath.contains(curPos)) {
+                    looped++;
+                    break;
+                }
+                loopedPath.add(curPos);
+                guard.move(blockedGrid);
+            }
+            blockedGrid.obstructions.remove(p);
+            guard.pos = new Position(start);
+            guard.dir = Direction.N;
+        }
+        System.out.println("Part 2 : " + looped);
     }
 
     private static class Guard{
@@ -65,6 +91,19 @@ public class day06 {
             this.dir = dir;
         }
 
+        public Guard(Guard g){
+            this.pos = g.pos;
+            this.dir = g.dir;
+        }
+
+        public Direction getDir() {
+            return dir;
+        }
+
+        public Position getPos() {
+            return pos;
+        }
+
         public void rotate(){
             switch (this.dir) {
                 case N : dir = Direction.E; break;
@@ -74,19 +113,19 @@ public class day06 {
             }
         }
 
-        public boolean blocked(Grid grid){
+        public boolean blocked(Grid g){
             Position nextMove = new Position(this.pos);
             nextMove.add(DirMap.get(dir));
-            return grid.obstructions.contains(nextMove);
+            return g.obstructions.contains(nextMove);
         }
 
-        public void move(Grid grid){
-            if (blocked(grid)) this.rotate();
+        public void move(Grid g){
+            if (blocked(g)) this.rotate();
             this.pos.add(DirMap.get(dir));
         }
 
-        public boolean out(Grid grid){
-            return pos.x == 0 || pos.x == grid.sizeX || pos.y == 0|| pos.y == grid.sizeY;
+        public boolean inGrid(Grid g){
+            return pos.x >= 0 && pos.x < g.sizeX && pos.y >= 0 && pos.y < g.sizeY;
         }
     }
 
@@ -106,20 +145,32 @@ public class day06 {
             this.sizeX = g.sizeX;
             this.sizeY = g.sizeY;
         }
+
+        public void addObstruction(Position p){
+            this.obstructions.add(new Position(p));
+        }
     }
 
     public static class Position{
         int x;
         int y;
+        Direction dir;
 
         public Position(int x, int y){
             this.x = x;
             this.y = y;
         }
 
+        public Position(Position p, Direction dir){
+            this.x = p.x;
+            this.y = p.y;
+            this.dir = dir;
+        }
+
         public Position(Position p){
             this.x = p.x;
             this.y = p.y;
+            this.dir = p.dir;
         }
 
         public void add(Position p){
@@ -131,12 +182,12 @@ public class day06 {
         public boolean equals(Object o) {
             if (o == null || getClass() != o.getClass()) return false;
             Position position = (Position) o;
-            return x == position.x && y == position.y;
+            return x == position.x && y == position.y && dir == position.dir;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(x, y);
+            return Objects.hash(x, y, dir);
         }
     }
 }
