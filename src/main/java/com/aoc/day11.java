@@ -2,64 +2,79 @@ package com.aoc;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import org.apache.commons.lang3.StringUtils;
-import java.util.Scanner;
-
-import static org.apache.commons.lang3.StringUtils.stripStart;
+import java.util.*;
 
 public class day11 {
 
-    private static ArrayList<String> stones = new ArrayList<>();
+    private static final List<Long> stones = new ArrayList<>();
 
     public static void main(String[] args) {
         File input = new File("src/main/resources/day11.in");
-
-        part1(input);
-        part2(input);
-    }
-
-    private static void part1(File input){
         readFile(input);
-        for(int i = 0; i < 25; i++){
-            blink();
-        }
-        System.out.println(stones.size());
+        part1();
+        part2();
     }
 
-    private static void part2(File input) {
+    private static void part1(){
+        long total = blink(25);
+        System.out.println(total);
+    }
 
+    private static void part2() {
+        long total = blink(75);
+        System.out.println(total);
     }
 
     private static void readFile(File file){
         try {
             Scanner input = new Scanner(file);
-            while(input.hasNext()) {
-                stones.addAll(Arrays.asList(input.next().split(" ")));
+            while(input.hasNextLong()) {
+                stones.add(input.nextLong());
             }
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
-
     }
-    private static void blink(){
-        ArrayList<String> newStones = new ArrayList<>();
-        for(String s : stones){
-            if(Long.parseLong(s)==0L){
-                newStones.add("1");
-            }
-            else if(s.length()%2==0){
-                String valL = stripStart(s.substring(0,s.length()/2),"0");
-                String valR = stripStart(s.substring(s.length()/2),"0");
-                newStones.add(valL.isEmpty() ? "0" : valL);
-                newStones.add(valR.isEmpty() ? "0" : valR);
-            }else{
-                long val = Long.parseLong(s) * 2024;
-                newStones.add(Long.toString(val));
-            }
+    private static List<Long> applyRule(Long stone){
+        List<Long> newStones = new ArrayList<>();
+        String stoneStr = stone.toString();
+        if(stone==0L){
+            newStones.add(1L);
         }
-        stones = newStones;
+        else if(stoneStr.length()%2==0){
+            Long valL = Long.parseLong(stoneStr.substring(0,stoneStr.length()/2));
+            Long valR = Long.parseLong(stoneStr.substring(stoneStr.length()/2));
+            newStones.add(valL);
+            newStones.add(valR);
+        }else{
+            newStones.add(stone*2024);
+        }
+        return newStones;
+    }
+    private static long blink(int nbBlink){
+        HashMap<Long, Long> stoneCount = new HashMap<>();
+        // init stones
+        for(Long s : stones){
+            if (stoneCount.containsKey(s)) stoneCount.put(s, stoneCount.get(s)+1L);
+            else stoneCount.put(s, 1L);
+        }
+        // par blink
+        for (int i=0; i < nbBlink; i++){
+            HashMap<Long, Long> newCount = new HashMap<>();
+            for(Long k : stoneCount.keySet()){
+                List<Long> newStones = applyRule(k);
+                for(Long s : newStones){
+                    if (newCount.containsKey(s)) newCount.put(s, newCount.get(s) + stoneCount.get(k));
+                    else newCount.put(s, stoneCount.get(k));
+                }
+            }
+            stoneCount = newCount;
+        }
+        long total = 0L;
+        for(Long k : stoneCount.keySet()){
+            total += stoneCount.get(k);
+        }
+        return total;
     }
 
 }
