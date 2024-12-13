@@ -11,7 +11,7 @@ public class day13 {
 
     private static final Pattern button = Pattern.compile("^Button (.): X\\+(\\d+), Y\\+(\\d+)$");
     private static final Pattern prize = Pattern.compile("Prize: X=(\\d+), Y=(\\d+)");
-    private static ArrayList<ClawMachine> machines = new ArrayList<>();
+    private static final ArrayList<ClawMachine> machines = new ArrayList<>();
 
     public static void main(String[] args) {
         File input = new File("src/main/resources/day13.in");
@@ -24,7 +24,7 @@ public class day13 {
         try {
             Scanner scan = new Scanner(input);
             long ax, ay, bx, by, px, py;
-            ax=ay= bx= by= px= py =0;
+            ax = ay = bx = by = px = py = 0L;
             while(scan.hasNext()){
 
                 String line = scan.nextLine();
@@ -52,27 +52,21 @@ public class day13 {
     }
 
     private static void part1() {
-        long minToken = 0L;
+        long tokens = 0L;
         for(ClawMachine m : machines){
-            long localMinToken = 400; // 100*3 + 100
-            boolean winnableX = false;
-            for(int a = 0; a <=100; a++){
-                for (int b = 0; b <= 100; b++){
-                    long tokens = a*3+b;
-                    if (a*m.ax + b*m.bx == m.prizeX  && a*m.ay + b*m.by == m.prizeY && tokens < localMinToken){
-                        localMinToken = tokens;
-                        winnableX = true;
-                    }
-                }
-            }
-            if(winnableX ) {
-                minToken += localMinToken ;
-            }
+            tokens += m.Solve();
         }
-        System.out.println("Part 1 : " + minToken);
+        System.out.println("Part 1 : " + tokens);
     }
 
     private static void part2() {
+        long tokens = 0L;
+        for(ClawMachine m : machines){
+            m.prizeX += 10000000000000L;
+            m.prizeY += 10000000000000L;
+            tokens += m.Solve();
+        }
+        System.out.println("Part 2 : " + tokens);
     }
 
     private static class ClawMachine{
@@ -80,8 +74,8 @@ public class day13 {
         final long ay;
         final long bx;
         final long by;
-        final long prizeX;
-        final long prizeY;
+        long prizeX;
+        long prizeY;
 
         public ClawMachine(long ax, long ay, long bx,long by, long prizeX, long prizeY){
             this.ax = ax;
@@ -92,13 +86,12 @@ public class day13 {
             this.prizeY = prizeY;
         }
 
-        public ClawMachine(String ax, String ay, String bx,String by, String prizeX, String prizeY){
-            this.ax = Long.parseLong(ax);
-            this.ay = Long.parseLong(ay);
-            this.bx = Long.parseLong(bx);
-            this.by = Long.parseLong(by);
-            this.prizeX = Long.parseLong(prizeX);
-            this.prizeY = Long.parseLong(prizeY);
+        public long Solve(){
+            // calcul par matrice inversée
+            double nbButtonA = (double) (by*prizeX - bx*prizeY)/ (ax*by - bx*ay);
+            double nbButtonB = (double) (ax*prizeY - ay*prizeX) / (ax*by - bx*ay);
+            if(nbButtonA % 1 == 0 && nbButtonB % 1 == 0) return (long) (3*nbButtonA+nbButtonB);
+            else return 0;
         }
     }
 
