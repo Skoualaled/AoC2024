@@ -12,8 +12,7 @@ public class day12 {
     public static void main(String[] args) {
         File input = new File("src/main/resources/day12.in");
         readFile(input);
-        part1();
-        //part2();
+        solve();
     }
 
     private static void readFile(File input) {
@@ -40,8 +39,9 @@ public class day12 {
         return inBound(x, y) && garden[x][y] == c;
     }
 
-    private static void part1() {
-        int price = 0;
+    private static void solve() {
+        int priceP1 = 0;
+        int priceP2 = 0;
         // init check
         for(int i = 0; i< garden.length; i++){
             ArrayList<Boolean> l = new ArrayList<>();
@@ -58,6 +58,7 @@ public class day12 {
                 queue.add(new Position(x,y));
                 int perim = 0;
                 int area = 0;
+                int sides = 0;
                 while (!queue.isEmpty()) {
                     Position curPos = queue.get(0);
                     // si déjà check on passe
@@ -67,27 +68,39 @@ public class day12 {
                     }
                     checked.get(curPos.x).set(curPos.y,true) ;
                     area++;
-                    // si voisin valide on l'ajoute à la queue
-                    if (validPlant(curPos.x - 1, curPos.y,garden[x][y] )) {
-                        queue.add(new Position(curPos.x - 1, curPos.y));
-                    } else perim ++;
-                    if (validPlant(curPos.x + 1, curPos.y,garden[x][y] )) {
-                        queue.add(new Position(curPos.x + 1, curPos.y));
-                    } else perim ++;
-                    if (validPlant(curPos.x, curPos.y-1,garden[x][y] )) {
-                        queue.add(new Position(curPos.x, curPos.y - 1));
-                    } else perim ++;
-                    if (validPlant(curPos.x, curPos.y+1,garden[x][y] )) {
-                        queue.add(new Position(curPos.x, curPos.y + 1));
-                    } else perim ++;
-                    // del de la queue la position controlé
+                    char type = garden[x][y];
+                    // croix
+                    boolean north = validPlant(curPos.x - 1, curPos.y, type);
+                    boolean south = validPlant(curPos.x + 1, curPos.y, type);
+                    boolean west = validPlant(curPos.x, curPos.y-1, type);
+                    boolean east = validPlant(curPos.x, curPos.y+1, type);
+                    // diagonale
+                    boolean northWest = validPlant(curPos.x-1, curPos.y-1, type);
+                    boolean northEast = validPlant(curPos.x-1, curPos.y+1, type);
+                    boolean southWest = validPlant(curPos.x+1, curPos.y-1, type);
+                    boolean southEast = validPlant(curPos.x+1, curPos.y+1, type);
+                    // si le voisin direct est valide on l'ajoute à la queue sinon perimetre augmente
+                    if (north) queue.add(new Position(curPos.x - 1, curPos.y));
+                    else perim ++;
+                    if (south) queue.add(new Position(curPos.x + 1, curPos.y));
+                    else perim ++;
+                    if (west) queue.add(new Position(curPos.x, curPos.y - 1));
+                    else perim ++;
+                    if (east) queue.add(new Position(curPos.x, curPos.y + 1));
+                    else perim ++;
+                    // Si la disposition créé un coin, le nombre de côté augmente
+                    if((!north && !east) || (north && east && !northEast)) sides++;
+                    if((!north && !west) || (north && west && !northWest)) sides++;
+                    if((!south && !east) || (south && east && !southEast)) sides++;
+                    if((!south && !west) || (south && west && !southWest)) sides++;
+                    // del de la queue la position controlée
                     queue.remove(curPos);
                 }
-                price += perim*area;
+                priceP1 += perim*area;
+                priceP2 += sides*area;
             }
         }
-        System.out.println(price);
-
+        System.out.println("Part 1 : "+ priceP1);
+        System.out.println("Part 2 : "+ priceP2);
     }
-
 }
