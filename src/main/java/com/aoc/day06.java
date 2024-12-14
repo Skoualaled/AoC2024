@@ -7,9 +7,8 @@ import java.util.*;
 public class day06 {
 
     static Grid InGrid;
-
     static Position start;
-    static final HashMap<Position, HashSet<Direction>> path = new HashMap<>();
+    static final HashSet<Position> path = new HashSet<>();
 
     public static void main(String[] args) {
         File input = new File("src/main/resources/day06.in");
@@ -18,14 +17,7 @@ public class day06 {
         part2();
     }
 
-    public enum Direction {
-        N,S,E,W
-    }
-
-    public static Map<Direction, Position> DirMap = Map.of(Direction.N, new Position(-1,0)
-                                                        ,Direction.S, new Position(1,0)
-                                                        ,Direction.E, new Position(0,1)
-                                                        ,Direction.W, new Position(0,-1));
+    public enum Direction { N, S, E, W }
 
     private static void readFile(File file){
         try {
@@ -49,41 +41,30 @@ public class day06 {
     }
 
     private static void part1() {
-        Guard guard = new Guard(new Position(start), Direction.N);
+        Guard guard = new Guard(start, Direction.N);
         while (guard.inGrid(InGrid)){
-            HashSet<Direction> newDirs;
-            Direction d = guard.getDir();
-            Position p = new Position(guard.getPos());
-            if (path.containsKey(p)) newDirs = path.get(p);
-            else newDirs = new HashSet<>();
-            newDirs.add(d);
-            path.put(p, newDirs);
+            path.add(guard.getPos());
             guard.move(InGrid);
         }
         System.out.println("Part 1 : " + path.size());
     }
 
+    // se base sur le calcul du path en part1
+    // Pour chaque position sur le chemin de sortie, on test si une obstruction provoque une boucle
     private static void part2(){
         int loopCount = 0;
-        HashMap<Position, HashSet<Direction>> newPath = new HashMap<>();
-        for(Position p : path.keySet()){
+        for(Position p : path){
             if(p.equals(start)) continue;
-            Guard guard = new Guard(new Position(start), Direction.N);
-            newPath.clear();
+            Guard guard = new Guard(start, Direction.N);
+            HashMap<Position, ArrayList<Direction>> newPath = new HashMap<>();
             InGrid.addObstruction(p);
             while (guard.inGrid(InGrid)) {
-                HashSet<Direction> newDirs;
                 Direction loopDir = guard.getDir();
-                Position loopPos = new Position(guard.getPos());
-                if (newPath.containsKey(loopPos) && newPath.get(loopPos).contains(loopDir) ) {
+                Position loopPos = guard.getPos();
+                ArrayList<Direction> newDirs = newPath.getOrDefault(loopPos, new ArrayList<>());
+                if (newDirs.contains(loopDir)){ // On repasse sur la même position avec la même direction
                     loopCount ++;
                     break;
-                }
-                if (newPath.containsKey(loopPos)) {
-                    newDirs = newPath.get(loopPos);
-                }
-                else {
-                    newDirs = new HashSet<>();
                 }
                 newDirs.add(loopDir);
                 newPath.put(loopPos, newDirs);
@@ -121,13 +102,13 @@ public class day06 {
         }
 
         public boolean blocked(Grid g){
-            Position nextMove = pos.add(DirMap.get(dir));
+            Position nextMove = pos.add(dir);
             return g.obstructions.contains(nextMove);
         }
 
         public void move(Grid g){
-            if (blocked(g)) rotate();
-            this.pos = this.pos.add(DirMap.get(dir));
+            while (blocked(g)) rotate();
+            pos = pos.add(dir);
         }
 
         public boolean inGrid(Grid g){
@@ -164,13 +145,14 @@ public class day06 {
             this.y = y;
         }
 
-        public Position(Position p){
-            this.x = p.x;
-            this.y = p.y;
-        }
+        public Position add(Direction d){
+            return switch (d) {
+                case N -> new Position(x - 1, y);
+                case S -> new Position(x + 1, y);
+                case E -> new Position(x, y + 1);
+                case W -> new Position(x, y - 1);
+            };
 
-        public Position add(Position p){
-            return new Position(x+p.x, y+p.y);
         }
 
         @Override
