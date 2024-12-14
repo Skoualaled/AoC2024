@@ -2,6 +2,11 @@ package com.aoc;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.regex.Matcher;
@@ -18,8 +23,7 @@ public class day14 {
     public static void main(String[] args) {
         File input = new File("src/main/resources/day14.in");
         readFile(input);
-        part1();
-        part2();
+        solve();
     }
 
     private static void readFile(File input) {
@@ -39,20 +43,51 @@ public class day14 {
         }
     }
 
-    private static void part1() {
-        for (Robot r : robotFleet) {
-            r.moveBy(100);
-        }
+    private static long getSafetyFactor(){
         long q1 = robotFleet.stream().filter(robot -> robot.x < qxLimit && robot.y < qyLimit).count();
         long q2 = robotFleet.stream().filter(robot -> robot.x > qxLimit && robot.y < qyLimit).count();
         long q3 = robotFleet.stream().filter(robot -> robot.x < qxLimit && robot.y > qyLimit).count();
         long q4 = robotFleet.stream().filter(robot -> robot.x > qxLimit && robot.y > qyLimit).count();
-        long res = q1*q2*q3*q4;
-        System.out.println("Part1 : " + res);
+        return q1*q2*q3*q4;
     }
 
-    private static void part2() {
+    private static void solve() {
+        for(int i =1; i< 10000; i++){
+            for (Robot r : robotFleet) {
+                r.moveBy(1);
+            }
+            if(isStraightLine()) printBathroom(robotFleet, i); // check visuel des fichiers de sorties à posteriori pour trouver le bon
+            if(i == 100) System.out.println("Part1 : " + getSafetyFactor()); // part1 -> 100 seconds
+        }
+    }
 
+    private static boolean isStraightLine() {
+        for(Robot r : robotFleet){
+            if (robotFleet.stream().filter(curR -> curR.x == r.x).count() > 15) return true;
+            if (robotFleet.stream().filter(curR -> curR.y == r.y).count() > 15) return true;
+        }
+        return false;
+    }
+
+    public static void printBathroom(ArrayList<Robot> state, int iteration){
+        String[][] plan = new String[101][103];
+        for (Robot r : state){
+            plan[r.x][r.y] = "#";
+        }
+        ArrayList<String> lines = new ArrayList<>();
+        for (String[] strings : plan) {
+            StringBuilder line = new StringBuilder();
+            for (String string : strings) {
+                line.append(string == null ? " " : "#");
+            }
+            lines.add(String.valueOf(line));
+        }
+        try {
+            Path file = Paths.get("src/main/resources/day14_out/it_" + iteration);
+            Files.write(file, lines, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            System.out.println("Erreur ecriture fichier");
+        }
     }
 
     public static class Robot{
@@ -60,12 +95,6 @@ public class day14 {
         int y;
         int dx;
         int dy;
-        public Robot(int x, int y, int dx, int dy){
-            this.x=x;
-            this.y=y;
-            this.dx=dx;
-            this.dy=dy;
-        }
 
         public Robot(String x, String y, String dx, String dy){
             this.x=Integer.parseInt(x);
