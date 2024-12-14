@@ -14,6 +14,7 @@ public class day08 {
         File input = new File("src/main/resources/day08.in");
         readFile(input);
         part1();
+        part2();
     }
 
     private static void part1() {
@@ -23,18 +24,41 @@ public class day08 {
             for(int i = 0; i < curAntennas.size(); i++){
                 Position a1 = curAntennas.get(i);
                 for(Position a2 : curAntennas.subList(i+1, curAntennas.size())){
-                    int dx = a1.x - a2.x;
-                    int dy = a1.y - a2.y;
-                    if (inBound(a1.x+dx, a1.y+dy)) antinodes.add(new Position(a1.x +dx, a1.y+dy));
-                    if (inBound(a2.x-dx, a2.y-dy)) antinodes.add(new Position(a2.x-dx, a2.y-dy));
+                    Position dist = subP(a1, a2);
+                    Position first = addP(a1, dist);
+                    Position second = subP(a2, dist);
+                    if (first.inBound()) antinodes.add(first);
+                    if (second.inBound()) antinodes.add(second);
                 }
             }
         }
         System.out.println("Part 1 : " + antinodes.size());
     }
 
-    private static boolean inBound(int x, int y){
-        return x >= 0 && x < sizeX && y >= 0 && y < sizeY;
+    public static void part2(){
+        HashSet<Position> antinodes = new HashSet<>();
+        for(String a : antennas.keySet()){
+            ArrayList<Position> curAntennas = antennas.get(a);
+            for(int i = 0; i < curAntennas.size(); i++){
+                Position a1 = curAntennas.get(i);
+                antinodes.add(a1);
+                for(Position a2 : curAntennas.subList(i+1, curAntennas.size())){
+                    antinodes.add(a2);
+                    Position dist = subP(a1, a2);
+                    Position first = addP(a1, dist);
+                    Position second = subP(a2, dist);
+                    while(first.inBound()){
+                        antinodes.add(first);
+                        first = addP(first, dist);
+                    }
+                    while(second.inBound()){
+                        antinodes.add(second);
+                        second = subP(second, dist);
+                    }
+                }
+            }
+        }
+        System.out.println("Part 2 : " + antinodes.size());
     }
 
     private static void readFile(File input) {
@@ -60,5 +84,16 @@ public class day08 {
         }
     }
 
-    public record Position(int x, int y){}
+    public static Position addP(Position p1, Position p2){
+        return new Position(p1.x+p2.x, p1.y+p2.y);
+    }
+    public static Position subP(Position p1, Position p2){
+        return new Position(p1.x-p2.x, p1.y-p2.y);
+    }
+
+    public record Position(int x, int y){
+        public boolean inBound(){
+            return x >= 0 && x < sizeX && y >= 0 && y < sizeY;
+        }
+    }
 }
