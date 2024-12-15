@@ -2,11 +2,6 @@ package com.aoc;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.regex.Matcher;
@@ -50,44 +45,34 @@ public class day14 {
         long q4 = robotFleet.stream().filter(robot -> robot.x > qxLimit && robot.y > qyLimit).count();
         return q1*q2*q3*q4;
     }
-
+    /**
+     * Calcul par iteration via modulo arithmétique des positions
+     * Pour la part 2 -> on calcule le nombre moyen voisin par robots
+     * L'itération avec le plus de voisin correspond au plus gros regroupement de robots donc à l'image du sapin
+     */
     private static void solve() {
+        double avgNeighbors = 0.0;
+        int xmasTree = 0;
         for(int i =1; i< 10000; i++){
             for (Robot r : robotFleet) {
                 r.moveBy(1);
             }
-            if(isStraightLine()) printBathroom(robotFleet, i); // check visuel des fichiers de sorties à posteriori pour trouver le bon
+            double avg = numberOfNeighbors();
+            if(avg > avgNeighbors) {
+                xmasTree = i;
+                avgNeighbors = avg;
+            }
             if(i == 100) System.out.println("Part1 : " + getSafetyFactor()); // part1 -> 100 seconds
         }
+        System.out.println("Part 2 : " + xmasTree);
     }
 
-    private static boolean isStraightLine() {
+    private static double numberOfNeighbors(){
+        long n = 0;
         for(Robot r : robotFleet){
-            if (robotFleet.stream().filter(curR -> curR.x == r.x).count() > 15) return true;
-            if (robotFleet.stream().filter(curR -> curR.y == r.y).count() > 15) return true;
+            n += robotFleet.stream().filter(r::isNeighbor).count();
         }
-        return false;
-    }
-
-    public static void printBathroom(ArrayList<Robot> state, int iteration){
-        String[][] plan = new String[101][103];
-        for (Robot r : state){
-            plan[r.x][r.y] = "#";
-        }
-        ArrayList<String> lines = new ArrayList<>();
-        for (String[] strings : plan) {
-            StringBuilder line = new StringBuilder();
-            for (String string : strings) {
-                line.append(string == null ? " " : "#");
-            }
-            lines.add(String.valueOf(line));
-        }
-        try {
-            Path file = Paths.get("src/main/resources/day14_out/it_" + iteration);
-            Files.write(file, lines, StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            System.out.println("Erreur ecriture fichier");
-        }
+        return (double) n / robotFleet.size();
     }
 
     public static class Robot{
@@ -108,14 +93,8 @@ public class day14 {
             this.y = Math.floorMod(y+(sec*dy), bathY);
         }
 
-        @Override
-        public String toString() {
-            return "Robot{" +
-                    "x=" + x +
-                    ", y=" + y +
-                    ", dx=" + dx +
-                    ", dy=" + dy +
-                    '}';
+        public boolean isNeighbor(Robot r){
+            return !r.equals(this) && ((Math.abs(r.x-x) == 1 && r.y==y) || (Math.abs(r.y-y) == 1 && r.x==x));
         }
     }
 }
