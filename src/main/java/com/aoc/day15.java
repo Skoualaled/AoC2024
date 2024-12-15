@@ -2,14 +2,16 @@ package com.aoc;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
-import java.util.Scanner;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class day15 {
 
     private static final ArrayList<Position> walls = new ArrayList<>();
     private static final ArrayList<Position> boxes = new ArrayList<>();
     private static final ArrayList<Direction> path = new ArrayList<>();
+    private static final ArrayList<Box> wideBox = new ArrayList<>();
+    private static final ArrayList<Position> wideWalls = new ArrayList<>();
     private static Position startPos;
 
     public static void main(String[] args) {
@@ -29,8 +31,13 @@ public class day15 {
                     switch (line[y]) {
                         case '#' :
                             walls.add(new Position(x,y));
+                            wideWalls.add(new Position(x,y*2));
+                            wideWalls.add(new Position(x,y*2+1));
                             break;
-                        case 'O' : boxes.add(new Position(x,y)); break;
+                        case 'O' :
+                            boxes.add(new Position(x,y));
+                            wideBox.add(new Box(new Position(x,y*2), new Position(x,y*2+1)));
+                            break;
                         case '@' : startPos = new Position(x,y); break;
                         case '<' : path.add(Direction.W); break;
                         case '^' : path.add(Direction.N); break;
@@ -50,15 +57,21 @@ public class day15 {
         for (Direction d : path){
             astroBot.move(d);
         }
-        System.out.println(sumCoord());
+        System.out.println("Part 1 : "+sumCoordinate(boxes));
     }
 
     private static void part2() {
+        Robot astroBot = new Robot(new Position(startPos.x, startPos.y*2));
+        for (Direction d : path){
+            astroBot.moveW(d);
+        }
+        System.out.println("Part 1 : "+sumCoordinate(wideBox.stream().map(b -> b.r).toList()));
     }
 
     public enum Direction{ N,S,E,W }
 
     public record Position(int x, int y){
+
         public Position add(Direction d){
             return switch (d) {
                 case N -> new Position(x - 1, y);
@@ -69,11 +82,44 @@ public class day15 {
         }
     }
 
-    public static long sumCoord(){
+    public static long sumCoordinate(List<Position> box){
         long res = 0;
-        for(Position p : boxes){
+        for(Position p : box){
             res += 100L * p.x + p.y;
         }
+        return res;
+    }
+
+    public static class Box{
+        Position r;
+        Position l;
+
+        public Box(Position r, Position l){
+            this.r = r;
+            this.l = l;
+        }
+
+        public Box add(Direction d){
+            return new Box(r.add(d), l.add(d));
+        }
+
+        public boolean block(Position p){
+            return (p.x == r.x || p.x == l.x) && (p.y == r.y || p.y == l.y);
+        }
+
+        public boolean collide(Box nBox){
+            return r.equals(nBox.l) || r.equals(nBox.r) || l.equals(nBox.r) || l.equals(nBox.l);
+        }
+
+    }
+
+    public static HashSet<Box> getStackedBoxes(Box b, Direction d){
+        HashSet<Box> res = new HashSet<>();
+        Set<Box> nextB = wideBox.stream().filter(box -> box.collide(b.add(d)) && !box.equals(b)).collect(Collectors.toSet());
+        for(Box collided : nextB){
+            res.addAll(getStackedBoxes(collided, d));
+        }
+        res.add(b);
         return res;
     }
 
@@ -98,6 +144,22 @@ public class day15 {
                     this.p = newPos;
                 }
             }else this.p = newPos;
+        }
+
+        public void moveW(Direction d){
+            Position newPos = p.add(d);
+            if (wideWalls.contains(newPos)) return;
+            Optional<Box> blockedBox = wideBox.stream().filter(b -> b.block(newPos)).findFirst(); // si box exist, elle est unique
+            if (blockedBox.isPresent()){
+                Box nextBox = blockedBox.get();
+                HashSet<Box> stack = getStackedBoxes(nextBox, d);
+                for(Box checkBox : stack){
+                    if(wideWalls.contains(checkBox.l.add(d)) || wideWalls.contains(checkBox.r.add(d))) return;
+                }
+                wideBox.removeAll(stack);
+                wideBox.addAll(stack.stream().map(b -> b.add(d)).toList());
+            }
+            this.p = newPos;
         }
     }
 }
