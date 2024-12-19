@@ -8,17 +8,31 @@ public class day18 {
 
     private static final ArrayList<Position> blocks = new ArrayList<>();
     private static final int size = 71;
+    private static final int limit = 1024;
 
     public static void main(String[] args) {
         File input = new File("src/main/resources/day18.in");
         readFile(input);
         part1();
+        part2();
     }
 
     private static void part1() {
-        List<Position> subBlock = blocks.subList(0,1024);
+        List<Position> subBlock = blocks.subList(0,limit);
         int[][] maze = createMaze(subBlock);
-        System.out.println(pathing(maze));
+        System.out.println("Part 1 : " + pathing(maze));
+    }
+
+    private static void part2(){
+        int path = 0;
+        int iteration = 0;
+        while(path != -1){
+            iteration++;
+            List<Position> subBlock = blocks.subList(0,limit+iteration);
+            int[][] maze = createMaze(subBlock);
+            path = pathing(maze);
+        }
+        System.out.println("Part 2 : " + blocks.get(limit+iteration-1));
     }
 
     private static int[][] createMaze(List<Position> obstacles){
